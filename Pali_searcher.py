@@ -10,19 +10,24 @@ import webbrowser
 import threading
 import sys
 
-
+#if getattr(sys, 'frozen', False):                                  
+#     template_folder = os.path.join(sys.executable, '..','templates')                         
+#     static_folder = os.path.join(sys.executable, '..','static')
+#     data_folder = os.path.join(sys.executable, "..", "data")                          
+#     app = Flask(__name__, template_folder = template_folder,                           
+#           static_folder = static_folder,
+#           data_folder = data_folder)
+#else:
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-static = resource_path("static")
-
-app = Flask(__name__, static_folder = resource_path("static"), template_folder=resource_path("templates"))
-
+app = Flask(__name__, static_folder = "static", template_folder=resource_path("templates"))
 
 class Pali_text:
     __slots__ = ("name", "start_page", "end_page", "start_line", "end_line", "text")
+    #Fluent Python p. 277 ... 後で効果を検証してから採用
     def __init__(self, name, start_page, start_line, end_page, end_line, text):
         self.name = name
         self.start_page = start_page
@@ -52,26 +57,32 @@ class Pali_text:
             result = """<span style="color:blue">"""+"{} {}.{}-{}.{}</span>: {}".format(self.name, self.start_page, self.start_line, self.end_page, self.end_line, self.text)
         return result
 
+class Pali_verse:
+    def __init__(self, number, text):
+        self.name = self
+        self.number = number
+        self.text = text
+    def output(self):
+        return "{}: {}".format(self.number, self.text)
+
 def KH_changer(word):
     KH_list =  ["A", "I", "U", "M", "G", "J", "T", "D", "N", "z", "S"]
     NC_list = ["ā", "ī", "ū", "ṃ", "ṅ", "ñ", "ṭ", "ḍ", "ṇ", "ś", "ṣ"]
     result_word = ""
     for i in word:
-        KH_match_flag = 0
         for j in range(len(KH_list)):
             if i == KH_list[j]:
                 result_word += NC_list[j]
-                KH_match_flag = 1
                 break
-        if KH_match_flag == 0:
+        else:
             result_word += i
     return result_word
 
 def opener(name, index, line, page):     
     #この関数の前に、中身が空の page, line, index array を作る必要があり
-    index_bin =  static + "/" + name + "_index_.bin"
-    line_bin =  static + "/" + name + "_page_.bin"
-    page_bin =  static + "/" + name + "_line_.bin"
+    index_bin = path + "/static/" + name + "_index_.bin"
+    line_bin = path + "/static/" + name + "_page_.bin"
+    page_bin = path + "/static/" + name + "_line_.bin"
     # I made mistake when I named these bin files; I try to re-name here. 
     f1 = open(index_bin, "rb")
     try:
@@ -91,16 +102,16 @@ def opener(name, index, line, page):
     except EOFError:
         pass
     f3.close()
-    data = open( static + "/" + name + "_.txt", "r", encoding="utf-8")
+    data = open(path + "/static/" + name + "_.txt", "r", encoding="utf-8")
     text_for_search = data.read()
     return text_for_search
 
 def Jataka_opener(number, index, line, page, start_point):
     name = "Ja_{}".format(number)
-    index_bin =  static + "/" + name + "_index_.bin"
-    line_bin =  static + "/" + name + "_line_.bin"
-    page_bin =  static + "/" + name + "_page_.bin"
-    start_bin =  static + "/" + "J_" + str(number) + "_start_point_.bin"
+    index_bin = path + "/static/" + name + "_index_.bin"
+    line_bin = path + "/static/" + name + "_line_.bin"
+    page_bin = path + "/static/" + name + "_page_.bin"
+    start_bin = path + "/static/" + "J_" + str(number) + "_start_point_.bin" 
     # I made mistake when I named these bin files; I try to re-name here. 
     f1 = open(index_bin, "rb")
     try:
@@ -128,10 +139,10 @@ def Jataka_opener(number, index, line, page, start_point):
     f4.close()
 
 def Sn_opener(index, line, page, start_point):
-    index_bin =  static + "/" + "Sn_index_.bin"
-    line_bin =  static + "/" + "Sn_line_.bin"
-    page_bin =  static + "/" + "Sn_page_.bin"
-    start_bin =  static + "/" + "Sn_verse_start_point.bin"
+    index_bin = path + "/static/" + "Sn_index_.bin"
+    line_bin = path + "/static/" + "Sn_line_.bin"
+    page_bin = path + "/static/" + "Sn_page_.bin"
+    start_bin = path + "/static/" + "Sn_verse_start_point.bin" 
     f1 = open(index_bin, "rb")
     try:
         index.fromfile(f1, 10**6)
@@ -217,7 +228,7 @@ def text_maker(word, BR="0", text_name="", break_point={".", ":", "?", "!", "|",
     
 def verse_text_searcher(text_name, searched):
     spaned = re.compile(r"(" + searched + ")", re.IGNORECASE)
-    csvfile = open(  static + "/" + text_name + "_.csv", "r", encoding="utf-8", newline="\n")
+    csvfile = open( path + "/static/" + text_name + "_.csv", "r", encoding="utf-8", newline="\n")
     lines = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
     result = ['<span style="color:blue">' + line[0] +"</span>: " 
         + re.sub(spaned, 
@@ -231,9 +242,9 @@ def verse_text_searcher(text_name, searched):
 
 def Th_searcher(text, searched):
     if text == "Th":
-        csvfile = open( static + "/" + "Thera_.csv", "r", encoding="utf-8", newline="\n")
+        csvfile = open(path + "/static/" + "Thera_.csv", "r", encoding="utf-8", newline="\n")
     else:
-        csvfile = open( static + "/" + "Theri_.csv", "r", encoding="utf-8", newline="\n")
+        csvfile = open(path + "/static/" + "Theri_.csv", "r", encoding="utf-8", newline="\n")
     lines = csv.reader(csvfile, skipinitialspace=True)
     spaned = re.compile(r"(" + searched + ")", re.IGNORECASE)
     result = [
@@ -419,7 +430,7 @@ def result_view():
                 page = array("I"); line_start = array("I"); index = array("I"); verse_start_point = array("I")
                 Jataka_opener(num, index, line_start, page, verse_start_point)
                 roman_number = ["I", "II", "III", "IV", "V", "VI"]
-                csvfile = open(  static + "/" + "J_{}.csv".format(num), "r", encoding = "utf-8", newline="\n")
+                csvfile = open( path + "/static/" + "J_{}.csv".format(num), "r", encoding = "utf-8", newline="\n")
                 lines = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
                 i = 0
                 start_index = 0
@@ -460,7 +471,7 @@ def result_view():
             result = []
             line_start = array("I"); index = array("I"); verse_start_point = array("I"); page = array("I")
             Sn_opener(index, line_start, page, verse_start_point)
-            csvfile = open(  static + "/" + "Sn_verse.csv", "r", encoding = "utf-8", newline="\n")
+            csvfile = open( path + "/static/" + "Sn_verse.csv", "r", encoding = "utf-8", newline="\n")
             lines = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
             i = 0
             start_index = 0
@@ -517,9 +528,17 @@ def result_view():
     return render_template('user.html', result = result_text)
 
 if __name__ == "__main__":
-    url = "http://127.0.0.1:5000"
-    threading.Timer(1.25, lambda: webbrowser.open(url)).start()
-    app.run(port=5000, debug=False)
-    # if debug = True, the webbrowser will open twice.
+    path = os.getcwd()
+
+    if os.path.exists(path + "/static/" + "Vin_I_.txt"):
+        url = "http://127.0.0.1:5000"
+        threading.Timer(1.25, lambda: webbrowser.open(url)).start()
+        app.run(port=5000, debug=False)
+    else:
+        print("Now we are making text for search at first. Please make sure you have internet accusses. It will be done in 10 minutes")
+        import NotFound
+        NotFound.mainpart()
+        input("### Please input Enter key and close this window. When you execute this application again, you can get Pali_searcher on your blowser ###")
+        exit()
 # $ pyinstaller Pali_searcher.py -F --add-data "./templates/*:templates" --add-data "./static/*:static"
-# If you use Windows, change "/*:" > "/*;"
+    # if debug = True, the webbrowser will open twice.

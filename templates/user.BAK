@@ -1,0 +1,6 @@
+﻿<!-- user.html -->
+<html>
+<body>
+        {{ html_text|safe }}
+</body>
+</html>

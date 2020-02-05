@@ -10,7 +10,7 @@ VRI版だと頁数・行数を数えるのにひと手間かかりますが、�
 に掲載された、Dhammakaya Foundation 入力版の判型を保った電子テキストのみに対応しているため網羅性は高くありません。
 また電子テキスト自体のタイプミスも多分にあるものと思われますのであくまでも参考程度に利用していただけますと幸いです。
 
-・データをこちら（）からダウンロードして解凍して下さい。https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip
+・データを下記アドレスからダウンロードして解凍して下さい。https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip
 
 ・解凍されたフォルダの内部にある Pali_searcher (.exe) をクリックして下さい。
 

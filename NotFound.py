@@ -94,7 +94,7 @@ def mainpart():
     with futures.ThreadPoolExecutor() as executor:
         res = executor.map(text_requests, text_dict.items())
         list(res)
-    print("#### All texts were installed! ####")
+    print("\n\n#### All texts were installed" + ": Process 100 %"+  "*" * (100 // 5))#八百長
 
 Sp_flag = 0
 def text_requests(text_dict_item):
@@ -123,47 +123,54 @@ def text_requests(text_dict_item):
     else:
         text_create(name)
 
+class process_num():
+    def __init__(self):
+        self.count = 0
+    def plus(self):
+        self.count += 1
+    def plus_Sp(self):
+        self.count += 7
+    def output(self):
+        return self.count
 
-process_counter = 0
-def process_print(func):
+def process_print(func, process_counter = process_num()):
     @functools.wraps(func)
     def printer(*args, **kwargs):
-        global process_counter
-        proc_per = ( process_counter * 100 // len(text_dict) )
+        proc_per = ( process_counter.output() * 100 // len(text_dict) )
         if args:
             text_name = args[0].split(".")[0]
             if not(os.path.exists(static_path + text_name + "_.txt")):
-                print("#### Preparing {:14}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)))
-                result = func(*args, **kwargs)
-                return result                
+                print("\r#### Preparing {:14}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end = "")
+                result = func(*args, **kwargs)               
                 if text_name == "Sp":
-                    process_counter += 7
+                    process_counter.plus_Sp()
                 else:
-                    process_counter += 1
-                print("#### Done with {:14}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)))
+                    process_counter.plus()
+                print("\r#### Done with {:14}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
+                return result
             else:
                 if text_name == "Sp":
-                    process_counter += 7
+                    process_counter.plus_Sp()
                 else:
-                    process_counter += 1
-                print("#### Pass {:19}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)))
+                    process_counter.plus()
+                print("\r#### Pass {:19}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end = "")
         else:
             file_name = func.__name__.split("_")[0]
             if  not(os.path.exists(static_path + file_name + "_.txt")) and not(os.path.exists(static_path + file_name + "_.csv")):
-                print("#### Preparing {:14}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)))
+                print("\r#### Preparing {:14}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
                 result = func(*args, **kwargs)
-                return result                
                 if file_name == "Sp":
-                    process_counter += 7
+                    process_counter.plus_Sp()
                 else:
-                    process_counter += 1
-                print("#### Done with {:14}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)))
+                    process_counter.plus()
+                print("\r#### Done with {:14}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
+                return result
             else:
                 if file_name == "Sp":
-                    process_counter += 7
+                    process_counter.plus_Sp()
                 else:
-                    process_counter += 1
-                print("#### Pass {:19}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)))
+                    process_counter.plus()
+                print("\r#### Pass {:19}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
     return printer
 
 
@@ -776,8 +783,7 @@ if __name__ == "__main__":
 #                Sp_create()
 #        else:
 #            text_create(name)
-    for item in text_dict.items():
-        text_requests(item)
+    mainpart()
     
 #    with futures.ThreadPoolExecutor() as executor:
 #        res = executor.map(text_requests, text_dict.items())

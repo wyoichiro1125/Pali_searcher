@@ -530,7 +530,7 @@ def result_view():
 if __name__ == "__main__":
     path = os.getcwd()
 
-    if os.path.exists(path + "/static/" + "Vin_I_.txt"):
+    if len(os.listdir(path + "/static/")) >= 204:
         url = "http://127.0.0.1:5000"
         threading.Timer(1.25, lambda: webbrowser.open(url)).start()
         app.run(port=5000, debug=False)

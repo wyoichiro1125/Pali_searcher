@@ -32,6 +32,7 @@
 
 
 (Watanabe Yoichiro)
+
 I am greatful to Mr. Max Brandstadt, who kindly checked my English.
 
 ---

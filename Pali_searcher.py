@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # coding: utf-8
-from flask import Flask, make_response, request, render_template, session
+from flask import Flask, make_response, request, render_template, session, send_from_directory
 from array import array
 import io
 import re
@@ -10,24 +10,19 @@ import webbrowser
 import threading
 import sys
 
-#if getattr(sys, 'frozen', False):                                  
-#     template_folder = os.path.join(sys.executable, '..','templates')                         
-#     static_folder = os.path.join(sys.executable, '..','static')
-#     data_folder = os.path.join(sys.executable, "..", "data")                          
-#     app = Flask(__name__, template_folder = template_folder,                           
-#           static_folder = static_folder,
-#           data_folder = data_folder)
-#else:
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-app = Flask(__name__, static_folder = "static", template_folder=resource_path("templates"))
+app = Flask(__name__, root_path = os.path.dirname(sys.argv[0]), static_folder = os.path.dirname(sys.argv[0]) + "/static/", template_folder= os.path.dirname(sys.argv[0]) + "/templates/")
+
+templates_path = resource_path("templates")
+#static_path = resource_path("static")
+static_path = os.path.dirname(sys.argv[0]) + "/static/"
 
 class Pali_text:
     __slots__ = ("name", "start_page", "end_page", "start_line", "end_line", "text")
-    #Fluent Python p. 277 ... 後で効果を検証してから採用
     def __init__(self, name, start_page, start_line, end_page, end_line, text):
         self.name = name
         self.start_page = start_page
@@ -35,54 +30,106 @@ class Pali_text:
         self.start_line = start_line
         self.end_line = end_line
         self.text = text
-        
+
     def output(self):
         result = ""
+        if self.name == "Ap":
+            self.text = re.sub(r"~", "", self.text)
+
+        sharp = ""
+        if self.start_page <= 9:
+            sharp = "00" + str(self.start_page)
+        elif self.start_page <= 99:
+            sharp = "0" + str(self.start_page)
+        else:
+            sharp = str(self.start_page)
+        
+        href_name = ""
+        if self.name[:2] == "J_":
+            pre = self.name[:2] 
+            aft = self.name[2:]
+            href_name = "Ja_" + aft
+
+        elif self.name == "Sp":
+            if self.start_page <= 284:
+                href_name = "Sp_1"
+            elif self.start_page <= 516:
+                href_name = "Sp_2"
+            elif self.start_page <= 734:
+                href_name = "Sp_3"
+            elif self.start_page <= 950:
+                href_name = "Sp_4"
+            elif self.start_page <= 1154:
+                href_name = "Sp_5"
+            elif self.start_page <= 1300:
+                href_name = "Sp_6"
+            else:
+                href_name = "Sp_7"
+
+        if href_name:
+            href = "static/" + href_name + "_.htm#" + sharp
+        else:
+            href = "static/" + self.name + "_.htm#" + sharp
+
         if self.name[:2] == "Ja":
             roman = ["I", "II", "III", "IV", "V", "VI"]
             self.name = self.name[:3] + roman[int(self.name[3]) - 1]
+
         if self.start_line == self.end_line:
             if self.start_page == 1:
                 self.start_line -= 1
-            result = """<span style="color:blue">""" + "{} {}.{}</span>: {}".format(self.name, self.start_page, self.start_line, self.text)
+            result = """<a href = {} target="_blank">""".format(href) + "{} {}.{}</a>: {}".format(self.name, self.start_page, self.start_line, self.text)
         elif self.start_page == self.end_page:
             if self.start_page == 1:
                 self.start_line -= 1
                 self.end_line -= 1
-            result = """<span style="color:blue">"""+"{} {}.{}-{}</span>: {}".format(self.name, self.start_page, self.start_line, self.end_line, self.text)
+            result = """<a href = {} target="_blank">""".format(href) +"{} {}.{}-{}</a>: {}".format(self.name, self.start_page, self.start_line, self.end_line, self.text)
         else:
             if self.start_page == 1:
                 self.start_line -= 1
                 self.end_line -= 1
-            result = """<span style="color:blue">"""+"{} {}.{}-{}.{}</span>: {}".format(self.name, self.start_page, self.start_line, self.end_page, self.end_line, self.text)
+            result = """<a href = {} target="_blank">""".format(href) +"{} {}.{}-{}.{}</a>: {}".format(self.name, self.start_page, self.start_line, self.end_page, self.end_line, self.text)
         return result
 
 class Pali_verse:
-    def __init__(self, number, text):
+    def __init__(self, text_number, text, text_name, text_id = ""):
         self.name = self
-        self.number = number
+        self.text_number = text_number
         self.text = text
+        self.text_name = text_name
+        self.text_id = text_id
     def output(self):
-        return "{}: {}".format(self.number, self.text)
+        if self.text == "Vm" or self.text == "Pv":
+            self.text_id = self.text_number[:-4]
+        if self.text_id == "":
+            self.text_id = self.text_number
+            href = url +  "static/" + self.text_name + "_.htm#" + self.text_id.replace(".", "_")
+        return """<a href = {} target="_blank">""".format(href) + "{}</a>: {}".format(self.text_number, self.text)
 
 def KH_changer(word):
-    KH_list =  ["A", "I", "U", "M", "G", "J", "T", "D", "N", "z", "S"]
-    NC_list = ["ā", "ī", "ū", "ṃ", "ṅ", "ñ", "ṭ", "ḍ", "ṇ", "ś", "ṣ"]
+    Not_change_flag = 0
+    KH_list =  ["A", "I", "U", "R" ,"L", "M", "G", "J", "T", "D", "N", "z", "S", "H"]
+    NC_list = ["ā", "ī", "ū", "ṛ" ,"ḷ", "ṃ", "ṅ", "ñ", "ṭ", "ḍ", "ṇ", "ś", "ṣ", "ḥ"]
     result_word = ""
     for i in word:
-        for j in range(len(KH_list)):
-            if i == KH_list[j]:
-                result_word += NC_list[j]
-                break
+        if i == "{":
+            Not_change_flag = 1
+        elif i == "}":
+            Not_change_flag = 0
         else:
-            result_word += i
+            for j in range(len(KH_list)):
+                if i == KH_list[j] and Not_change_flag == 0:
+                    result_word += NC_list[j]
+                    break
+            else:
+                result_word += i
     return result_word
 
 def opener(name, index, line, page):     
     #この関数の前に、中身が空の page, line, index array を作る必要があり
-    index_bin = path + "/static/" + name + "_index_.bin"
-    line_bin = path + "/static/" + name + "_page_.bin"
-    page_bin = path + "/static/" + name + "_line_.bin"
+    index_bin = static_path + name + "_index_.bin"
+    line_bin = static_path + name + "_page_.bin"
+    page_bin = static_path + name + "_line_.bin"
     # I made mistake when I named these bin files; I try to re-name here. 
     f1 = open(index_bin, "rb")
     try:
@@ -102,16 +149,16 @@ def opener(name, index, line, page):
     except EOFError:
         pass
     f3.close()
-    data = open(path + "/static/" + name + "_.txt", "r", encoding="utf-8")
+    data = open(static_path + name + "_.txt", "r", encoding="utf-8")
     text_for_search = data.read()
     return text_for_search
 
 def Jataka_opener(number, index, line, page, start_point):
     name = "Ja_{}".format(number)
-    index_bin = path + "/static/" + name + "_index_.bin"
-    line_bin = path + "/static/" + name + "_line_.bin"
-    page_bin = path + "/static/" + name + "_page_.bin"
-    start_bin = path + "/static/" + "J_" + str(number) + "_start_point_.bin" 
+    index_bin = static_path + name + "_index_.bin"
+    line_bin = static_path + name + "_line_.bin"
+    page_bin = static_path + name + "_page_.bin"
+    start_bin = static_path + "J_" + str(number) + "_start_point_.bin"
     # I made mistake when I named these bin files; I try to re-name here. 
     f1 = open(index_bin, "rb")
     try:
@@ -139,10 +186,10 @@ def Jataka_opener(number, index, line, page, start_point):
     f4.close()
 
 def Sn_opener(index, line, page, start_point):
-    index_bin = path + "/static/" + "Sn_index_.bin"
-    line_bin = path + "/static/" + "Sn_line_.bin"
-    page_bin = path + "/static/" + "Sn_page_.bin"
-    start_bin = path + "/static/" + "Sn_verse_start_point.bin" 
+    index_bin = static_path + "Sn_index_.bin"
+    line_bin = static_path + "Sn_line_.bin"
+    page_bin = static_path + "Sn_page_.bin"
+    start_bin = static_path + "Sn_verse_start_point.bin"
     f1 = open(index_bin, "rb")
     try:
         index.fromfile(f1, 10**6)
@@ -228,12 +275,12 @@ def text_maker(word, BR="0", text_name="", break_point={".", ":", "?", "!", "|",
     
 def verse_text_searcher(text_name, searched):
     spaned = re.compile(r"(" + searched + ")", re.IGNORECASE)
-    csvfile = open( path + "/static/" + text_name + "_.csv", "r", encoding="utf-8", newline="\n")
+    csvfile = open( static_path + text_name + "_.csv", "r", encoding="utf-8", newline="\n")
     lines = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
-    result = ['<span style="color:blue">' + line[0] +"</span>: " 
-        + re.sub(spaned, 
-        """<span style="color:red">"""+ r"\1" +"</span>"
-        , line[1].lstrip().rstrip()) + "<BR>"
+    result = [
+        Pali_verse(line[0], 
+        re.sub(spaned, """<span style="color:red">"""+ r"\1" +"</span>", line[1].lstrip().rstrip()), 
+        text_name)
         for line in lines 
         if re.search(searched, re.sub(r"\*\d\d?|<BR>|<br>", "", line[1]), re.IGNORECASE)
             ]
@@ -242,18 +289,21 @@ def verse_text_searcher(text_name, searched):
 
 def Th_searcher(text, searched):
     if text == "Th":
-        csvfile = open(path + "/static/" + "Thera_.csv", "r", encoding="utf-8", newline="\n")
+        csvfile = open(static_path + "Thera_.csv", "r", encoding="utf-8", newline="\n")
     else:
-        csvfile = open(path + "/static/" + "Theri_.csv", "r", encoding="utf-8", newline="\n")
-    lines = csv.reader(csvfile, skipinitialspace=True)
+        csvfile = open(static_path + "Theri_.csv", "r", encoding="utf-8", newline="\n")
+    reader = csv.reader(csvfile)
+    lines = list(list(reader)[0])
+
     spaned = re.compile(r"(" + searched + ")", re.IGNORECASE)
     result = [
-        '<span style="color:blue">' + 
-        re.sub(r"(.*?\|\|)(.*?)(\|\|)", r"\2", line[0]) + "</span>: " + re.sub(spaned, """<span style="color:red">"""+ r"\1" + "</span>", 
-        re.sub(r"(.*?\|\|)(.*?)(\|\|)", r"\1", line[0]).lstrip().rstrip()) 
-        + "<BR>"
+        Pali_verse(
+            re.sub(r"(^.*?\|\| )(Th.*?)( \|\|.*?$)", r"\2", line), 
+            re.sub(spaned, """<span style="color:red">"""+ r"\1" + "</span>", line.lstrip().rstrip()), 
+            text 
+            )
         for line in lines
-        if re.search(searched, re.sub(r"\*\d\d?|<BR>|<br>", "", line[0]), re.IGNORECASE)
+        if re.search(searched, re.sub(r"\*\d\d?|<BR>|<br>", "", line), re.IGNORECASE)
         ]
     csvfile.close()
     return result
@@ -264,17 +314,22 @@ def Th_searcher(text, searched):
 def form():
     return """
 <!DOCTYPE html>
-        <html lang=ja>
+        <html lang=en>
+        <meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Expires" content="0">
             <body>
-            <title>試製PTS版パーリテキスト検索システム</title>
-            <p1>試製PTS版パーリテキスト検索システム</p1><br>
+            <title>GRETIL Pali Text Searcher</title>
+            <h1>GRETIL Pali Text Searcher</h1><br>
                 <form action="/result" method="post" enctype="cgi-bin/abc.cgi"><br>
-                    <input type="text" name="word" /><br>
-			<input type="radio" name="KH" value="1">KH方式を使用 
-			<input type="radio" name="KH" value="0" checked = "checked">KH方式を使用しない<br>
-		<input type="radio" name="BR" value="1">改行を反映する
-		<input type="radio" name="BR" value="0" checked = "checked">改行を反映しない<br><br>
-テキストを選択してください <input type="checkbox" id="all_texts" />all texts<br><br>
+                    <input type="text" placeholder="Input word(s) to be searched here" name="word" required/><br>
+			<input type="radio" name="KH" value="1">Use KH-transcription system 
+			<input type="radio" name="KH" value="0" checked = "checked">Input Unicode characters by yourself<br>
+		<input type="radio" name="BR" value="1">Show line-changes
+		<input type="radio" name="BR" value="0" checked = "checked">Neglect line-changes<br><br>
+        Please input maximum number of results shown at ones
+        <input type="number" name="item_max_number" min="100" step="100" value="100", required><br><br>
+Please select texts <input type="checkbox" id="all_texts" />all texts<br><br>
 
 
 <label><input type="checkbox" name="text" value="Vin"/>Vin<br>
@@ -319,7 +374,7 @@ def form():
 <label><input type="checkbox" name="text" class="other" value="Sp"/>Sp
 <label><input type="checkbox" name="text" class="other" value="Ja"/>Ja
 <input type="checkbox" id="other_all" />all
-<br>
+<br><br>
                     <input type="submit" />
                 </form>
         <script type="text/javascript">
@@ -362,13 +417,11 @@ def form():
 <br>
 <br>
 
-*電子テキストは全て GRETIL - Göttingen Register of Electronic Texts in Indian Languages（http://gretil.sub.uni-goettingen.de/gretil.html）
-に公開されている Dhammakaya Foundation により入力された PTS 版を元にしています。<br>
-
-**これはβ版です。不具合がありましたら渡邉までご報告いただけると幸いです。<br>
+*All E-texts used here are based on PTS version inputted by Dhammakaya Foundation, uploaded on GRETIL - Göttingen Register of Electronic Texts in Indian Languages（http://gretil.sub.uni-goettingen.de/gretil.html). <br>
+**This system is in beta. If you find any problems, please let me know. I would greatly appreciate it.<br>
 <br>
 
-製作：渡邉要一郎
+Watanabe Yoichiro, Graduate School of The University of Tokyo <br>
 
 
 
@@ -376,10 +429,19 @@ def form():
         </html>
     """
 
+@app.route("/static/<string:path>")
+def send_static(path):
+    target = static_path + path
+    return send_from_directory(static_path, path)
+# This function is Mac only.
+
+
+
 @app.route('/result', methods=["POST"])
 def result_view():
     results = []; text_list = []
     searched = str(request.form["word"])
+    item_number = int(request.form["item_max_number"])
     if not searched:
         return "No result"
     if str(request.form["KH"]) == "1":
@@ -430,7 +492,7 @@ def result_view():
                 page = array("I"); line_start = array("I"); index = array("I"); verse_start_point = array("I")
                 Jataka_opener(num, index, line_start, page, verse_start_point)
                 roman_number = ["I", "II", "III", "IV", "V", "VI"]
-                csvfile = open( path + "/static/" + "J_{}.csv".format(num), "r", encoding = "utf-8", newline="\n")
+                csvfile = open( static_path + "J_{}.csv".format(num), "r", encoding = "utf-8", newline="\n")
                 lines = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
                 i = 0
                 start_index = 0
@@ -461,17 +523,17 @@ def result_view():
                         spaned = re.compile(r"(" + searched + ")", re.IGNORECASE)
                         searched_text = re.sub(spaned, """<span style="color:red">"""+ r"\1" +"</span>", searched_text)
                         new_set = Pali_text("J_{}".format(roman_number[num-1]), page[start_index], line_start[start_index], page[end_index], line_start[end_index], searched_text)
-                        result.append(new_set.output() + "<BR>")
+                        result.append(new_set)
                     i += 1
             results += result
         elif text == "Ap":
-            pre_result = text_maker(searched, BR, text, break_point={"~"})
-            results += [re.sub(r"~", "", item.output() + "<BR>") for item in pre_result]
+            results += text_maker(searched, BR, text, break_point={"~"})
+#            results += [re.sub(r"~", "", item.output() + "<BR>") for item in pre_result]
         elif text == "Sn":
             result = []
             line_start = array("I"); index = array("I"); verse_start_point = array("I"); page = array("I")
             Sn_opener(index, line_start, page, verse_start_point)
-            csvfile = open( path + "/static/" + "Sn_verse.csv", "r", encoding = "utf-8", newline="\n")
+            csvfile = open( static_path + "Sn_verse.csv", "r", encoding = "utf-8", newline="\n")
             lines = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
             i = 0
             start_index = 0
@@ -509,36 +571,45 @@ def result_view():
             pre_result = text_maker(searched, BR, "Sn")
             result += pre_result
             result.sort(key = lambda x: (x.start_page, x.start_line))
-            results += [item.output() + "<BR>" for item in result]
+            results += result
 
         elif text in {"Dhp", "Cp", "Bv", "Vm", "Pv"}:
             results += verse_text_searcher(text, searched)
         elif text in {"Th", "Thi"}:
             results += Th_searcher(text, searched)
         else:
-            pre_result = text_maker(searched, BR, text)
-            results += [item.output() + "<BR>" for item in pre_result]
+            results += text_maker(searched, BR, text)
+#            results += [item.output() + "<BR>" for item in pre_result]
+
+# Send output-text to html 
     if results == []:
         return "No result"
     result_text = ""
+    page_counter = 1
     for i in range(len(results)):
-        if i >= 1 and results[i] != results[i - 1]:
-            result_text += results[i]
+#pagination
+        if i % item_number == 0 and i != 0:
+            result_text += """</div><div class = "selection" id="page-{}">""".format((i // item_number) + 1)
+            page_counter += 1
+        elif i == 0:
+            result_text += """<div class = "selection" id="page-1">"""
+        if i >= 1 and results[i].text != results[i - 1].text:
+            result_text += results[i].output() + "<BR>"
 #    return result_text
-    return render_template('user.html', result = result_text)
+    result_text += "</div>"
+    return render_template('user.html', result = result_text, page_counter = page_counter)
 
 if __name__ == "__main__":
-    path = os.getcwd()
 
-    if len(os.listdir(path + "/static/")) >= 204:
-        url = "http://127.0.0.1:5000"
+    if len(os.listdir(static_path)) >= 259:
+        url = "http://127.0.0.1:1125"
         threading.Timer(1.25, lambda: webbrowser.open(url)).start()
-        app.run(port=5000, debug=False)
+        app.run(port=1125, debug=False)
     else:
         print("Now we are making text for search at first. Please make sure you have internet accusses. It will be done in 10 minutes")
         import NotFound
         NotFound.mainpart()
         input("### Please input Enter key and close this window. When you execute this application again, you can get Pali_searcher on your blowser ###")
         exit()
-# $ pyinstaller Pali_searcher.py -F --add-data "./templates/*:templates" --add-data "./static/*:static"
+# To make the package: $ pyinstaller Pali_searcher.py -F --add-data "./templates/*:templates" --add-data "./static/*:static"
     # if debug = True, the webbrowser will open twice.

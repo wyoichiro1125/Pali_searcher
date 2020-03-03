@@ -10,15 +10,14 @@ import os
 import functools
 from concurrent import futures
 
-#やること
-#ダウンロードを行う
-#普通のテキストの整形
-#韻文テキストの整形
-#Sp など、複数のテキストを一緒にしなければいけない場合の処理
-#並行処理（時間がかかるので）
 
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
-static_path = os.getcwd() + "/static/"
+static_path = os.path.dirname(sys.argv[0]) + "/static/"
+
 text_list = ["Vin_I.txt", "Vin_II.txt", "Vin_III.txt", "Vin_IV.txt", "Vin_V.txt",
          "DN_I.txt", "DN_II.txt", "DN_III.txt",
          "MN_I.txt", "MN_II.txt", "MN_III.txt",
@@ -89,6 +88,8 @@ text_dict = {"Vin_I.txt": "http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_t
         }
 
 def mainpart():
+    print(static_path)
+    print(os.path.dirname(sys.argv[0]))
     print("### Start ###")
     print(" ")
     with futures.ThreadPoolExecutor() as executor:
@@ -123,61 +124,44 @@ def text_requests(text_dict_item):
     else:
         text_create(name)
 
-class process_num():
-    def __init__(self):
-        self.count = 0
-    def plus(self):
-        self.count += 1
-    def plus_Sp(self):
-        self.count += 7
-    def output(self):
-        return self.count
 
-def process_print(func, process_counter = process_num()):
+def process_print(func):
     @functools.wraps(func)
     def printer(*args, **kwargs):
-        proc_per = ( process_counter.output() * 100 // len(text_dict) )
+        proc_per = ( len(os.listdir(static_path)) * 100 // 268 )
         if args:
             text_name = args[0].split(".")[0]
-            if not(os.path.exists(static_path + text_name + "_.txt")):
+            if not(os.path.exists(static_path + text_name + "_.txt")) and not(os.path.exists(static_path + text_name + "_.htm")):
                 print("\r#### Preparing {:14}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end = "")
                 result = func(*args, **kwargs)               
-                if text_name == "Sp":
-                    process_counter.plus_Sp()
-                else:
-                    process_counter.plus()
                 print("\r#### Done with {:14}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
                 return result
             else:
-                if text_name == "Sp":
-                    process_counter.plus_Sp()
-                else:
-                    process_counter.plus()
                 print("\r#### Pass {:19}: ".format(text_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end = "")
         else:
             file_name = func.__name__.split("_")[0]
-            if  not(os.path.exists(static_path + file_name + "_.txt")) and not(os.path.exists(static_path + file_name + "_.csv")):
+            if  not(os.path.exists(static_path + file_name + "_.txt")) and not(os.path.exists(static_path + file_name + "_.csv")) and not(os.path.exists(static_path + file_name + "_.htm")):
                 print("\r#### Preparing {:14}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
                 result = func(*args, **kwargs)
-                if file_name == "Sp":
-                    process_counter.plus_Sp()
-                else:
-                    process_counter.plus()
                 print("\r#### Done with {:14}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
                 return result
             else:
-                if file_name == "Sp":
-                    process_counter.plus_Sp()
-                else:
-                    process_counter.plus()
                 print("\r#### Pass {:19}: ".format(file_name) + "Process {:3} %".format(proc_per) + "*" * (proc_per // 5) + "_" * (20 - (proc_per // 5)), end="")
     return printer
 
+def htm_make(name, text_body):
+    new_name = name.split(".")[0]
+    new_name = new_name + "_.htm"
+    text_body = re.sub(r"(\[page )(\d{1,4})(\])", """<section id ='""" + r"\2" + """'>""" + r"\1" + r"\2" + r"\3" + """</section>""", text_body)
+    with open(static_path + new_name, "w", encoding="utf-8") as f:
+        f.write(text_body)
 
+import copy
 def text_make(text):
     response = requests.get(text_dict[text])
     response.encoding = "utf-8"
     vin_ = response.text
+    htm_make(text, copy.deepcopy(vin_))
     vin_ = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", vin_)
     vin_ = re.sub(r"\r\n", "\n", vin_)#これが大事な一行になる
     if text in {"SN_II.txt", "SN_III.txt", "SN_IV.txt", "SN_V.txt"}:
@@ -190,22 +174,6 @@ def text_make(text):
         vin_ = re.sub(r"""(?<=page 001\])(.|\s)*?Part I""", "", vin_)
     elif text == "Nidd_II.txt":
         vin_ = re.sub(r"""(?<=page 001\])(.|\s)*?Vatthugāthā\.""", "", vin_)
-#    elif text == "Sp_1":
-#        get = re.sub(r"(?<=page 001\])(.|\s)*?sammāsambuddhassa\.<br>", "", vin_)
-#    elif text == "Sp_2":
-#        get = re.sub(r"(?<=\d\])(.|\s)*?PĀRĀJIKA II<br>", "", vin_)
-#    elif text == "Sp_3":
-#        get = re.sub(r"(?<=\d\])(.|\s)*?SAṄGHĀDISESA I-XIII<br>", "", vin_)
-#    elif text == "Sp_4":
-#        get = re.sub(r"""(?<=\d\])(.|\s)*?SAMBUDDHASSA\.<span class="red"><sup>1</sup></span><br>""", "", vin_)
-#    elif text == "Sp_5":
-#        get = re.sub(r"(?<=\d\])(.|\s)*?SAMANTAPĀSĀDIKĀ<br>", "", vin_)
-#    elif text == "Sp_6":
-#        get = re.sub(r"(?<=\d\])(.|\s)*?KAMMAKKHANDHAKA-VAṆṆANĀ<br>", "", vin_)
-#    elif text == "Sp_7":
-#        get = re.sub(r"(?<=\d\])(.|\s)*?I<br>", "", vin_)
-#    elif text == "Sn.txt":
-#        get = re.sub(r"(?<=\d\])(.|\s)*?Uragasutta\.<BR>", "", vin_)
     elif text == "J_1":
         vin_ = re.sub(r"(?<=page 001\])(.|\s)*?(?=JaNi)", "", vin_)
     elif text == "Paṭis_II.txt":
@@ -219,18 +187,13 @@ def text_make(text):
     elif text == "Vism.txt":
         vin_ = re.sub(r"(?<=page 001\])(.|\s)*?NIDĀNĀDIKATHĀ<BR>", "", vin_)
     elif "&nbsp;" in text[:1000] or text in {"Yam_I.txt", "Yam_II.txt", "Pugg.txt", "Paṭis_I.txt"}:
-#        print("Case ;&")
         vin_ = re.sub(r"(?<=page 001\])(.|\s)*?(?=\n(\w|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\w))", "", vin_)
     else:
- #       print("Case normal")
         vin_ = re.sub(r"(?<=page 001\])(.|\s)*?(?=\n     \S)", "", vin_)
     vin_ = re.sub(r"\[page(.|\s)*?\]", "%", vin_)
     vin_ = re.sub(r"(?<=page 001])(.|\s)*?(?=\n\     \S)", "", vin_)
-    vin_ = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "*"r"\2", vin_)
-    #ローマ数字＋タイトル的な部分を消したい
+    vin_ = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "", vin_)
     vin_ = re.sub(r"\((.|\s).*?\d\)", "", vin_)
-#    vin_ = re.sub(r"\s+(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[VX]|V?I{0,3})\.", "", vin_)
-#    vin_ = re.sub(r"\s+(I[VX]|V*?I{0,3})\..*?\.", "", vin_)
     vin_ = re.sub(r"\[\d.*?\]", "", vin_)#カッコで括られたセクションの名前のようなところを削除したい
     vin_ = re.sub(r"\s+\d{1,3}\. .*?VAGGA\.", "", vin_)#Jataka の ~ vagga っていうのを消したい
     vin_ = re.sub(r"\s+\[.*?\](\<BR\>|\<br\>)", "", vin_)
@@ -307,26 +270,34 @@ def Sp_make(text = "Sp"):
         response.encoding = "utf-8"
         vin_ = response.text
         vin_ = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", vin_)
-        vin_ = re.sub(r"\r\n", "\n", vin_)#これが大事な一行になる
+        vin_ = re.sub(r"\r\n", "\n", vin_)
         if i == 1:
+            htm_make("Sp_1", copy.deepcopy(vin_))
             vin_ = re.sub(r"(?<=page 001\])(.|\s)*?sammāsambuddhassa\.<br>", "", vin_)
         elif i == 2:
+            htm_make("Sp_2", copy.deepcopy(vin_))
             start, end = re.search(r"(?<=\d\])(.|\s)*?II<br>", vin_).span()
             vin_ = vin_[:start] + vin_[end:]
 #            vin_ = re.sub(r"(?<=\d\])(.|\s)*?II<br>", "", vin_)
         elif i == 3:
+            htm_make("Sp_3", copy.deepcopy(vin_))
             start, end = re.search(r"(?<=\d\])(.|\s)*?SAṄGHĀDISESA I-XIII<br>", vin_).span()
             vin_ = vin_[:start] + vin_[end:]
         elif i == 4:
+            htm_make("Sp_4", copy.deepcopy(vin_))
             start, end = re.search(r"""(?<=\d\])(.|\s)*?SAMBUDDHASSA\.<span class="red"><sup>1</sup></span><br>""", vin_).span()
             vin_ = vin_[:start] + vin_[end:]
+            vin_ += "%"#For page 950 is not exist.
         elif i == 5:
+            htm_make("Sp_5", copy.deepcopy(vin_))
             start, end = re.search(r"(?<=\d\])(.|\s)*?SAMANTAPĀSĀDIKĀ<br>", vin_).span()
             vin_ = vin_[:start] + vin_[end:]
         elif i == 6:
+            htm_make("Sp_6", copy.deepcopy(vin_))
             start, end = re.search(r"(?<=\d\])(.|\s)*?KAMMAKKHANDHAKA-VAṆṆANĀ<br>", vin_).span()
             vin_ = vin_[:start] + vin_[end:]
         elif i == 7:
+            htm_make("Sp_7", copy.deepcopy(vin_))
             start, end = re.search(r"(?<=\d\])(.|\s)*?I<br>", vin_).span()
             vin_ = vin_[:start] + vin_[end:]
         Sp_raw += vin_
@@ -335,8 +306,6 @@ def Sp_make(text = "Sp"):
     vin_ = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "*"r"\2", vin_)
     #ローマ数字＋タイトル的な部分を消したい
     vin_ = re.sub(r"\((.|\s).*?\d\)", "", vin_)
-#    vin_ = re.sub(r"\s+(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[VX]|V?I{0,3})\.", "", vin_)
-#    vin_ = re.sub(r"\s+(I[VX]|V*?I{0,3})\..*?\.", "", vin_)
     vin_ = re.sub(r"\[\d.*?\]", "", vin_)#カッコで括られたセクションの名前のようなところを削除したい
     vin_ = re.sub(r"\s+\d{1,3}\. .*?VAGGA\.", "", vin_)#Jataka の ~ vagga っていうのを消したい
     vin_ = re.sub(r"\s+\[.*?\](\<BR\>|\<br\>)", "", vin_)
@@ -370,7 +339,7 @@ def Jataka(text_for_search, text_number):
     Jataka = r"Ja\_(.|\s)*?\da?b? \|\|"
     A = re.finditer(Jataka, text_for_search)
     for text in A:
-        J_verse_start.append(text.start())#韻文の開始位置を保存しておく
+        J_verse_start.append(text.start())#keep startpoints of verses
         J_verse_end.append(text.end())
         verse.append([text.group(0)])
         verse_long = len(text_for_search[text.start(): text.end()])
@@ -394,6 +363,7 @@ def Sn_text_make(text = "Sn"):
     response = requests.get(text_dict["Sn.txt"])
     response.encoding = "utf-8"
     vin_ = response.text
+    htm_make(text, copy.deepcopy(vin_))
     vin_ = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", vin_)
     vin_ = re.sub(r"\r\n", "\n", vin_)#これが大事な一行になる
     vin_ = re.sub(r"(?<=\[page 001\])(.|\s)*?Uragasutta\.", "", vin_)
@@ -453,6 +423,7 @@ def Ap_make(text = "Ap"):
     response = requests.get(text_dict["Ap.txt"])
     response.encoding = "utf-8"
     vin_ = response.text
+    htm_make(text, copy.deepcopy(vin_))
     vin_ = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", vin_)
     vin_ = re.sub(r"\r\n", "\n", vin_)#これが大事な一行になる
     vin_ = re.sub(r"\[page(.|\s)*?\]", "%", vin_)
@@ -486,11 +457,15 @@ def Ap_make(text = "Ap"):
     text_for_search = re.sub(r"[%&#\n]", "", text_for_count)
     return text_for_count, text_for_search
 
+
 @process_print
 def Theri_make(text = "Thi"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/therigou.htm")
     response.encoding = "utf-8"
     vin_ = response.text
+    text_body = re.sub(r"(\|\| Thī_)(.*?)( \|\|)", "<section id ='Thī_" + r"\2" + "'>" + r"\1"+r"\2"+r"\3" + "</section>", copy.deepcopy(vin_))
+    with open(static_path + "Thi_.htm" , "w", encoding="utf-8") as f:
+        f.write(text_body)
     vin_ = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", vin_)
     vin_ = re.sub(r"\r\n", "\n", vin_)#これが大事な一行になる
     vin_ = re.sub(r"itthaṃ sudaṃ bhagavā Muttaṃ sikkhamānaṃ imāya<BR>\ngāthāya abhiṇhaṃ ovadati\. ||<BR>", "", vin_)
@@ -517,13 +492,17 @@ def Theri_make(text = "Thi"):
         verse_set.append(verse)
     with open(static_path + "Theri_.csv", "w", encoding="utf-8", newline="") as g:
         writer = csv.writer(g)
-        writer.writerows(verse_set)
+        writer.writerow(verse_set)# not writerows
 
 @process_print
 def Thera_make(text = "Th"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/theragou.htm")
     response.encoding = "utf-8"
     vin_ = response.text
+    vin_ = re.sub(r"\|\| 939 \|\|", "|| Th_939 ||", vin_)
+    text_body = re.sub(r"(\|\| Th_)(.*?)( \|\|)", "<section id ='Th_" + r"\2" + "'>" + r"\1"+r"\2"+r"\3" + "</section>", copy.deepcopy(vin_))
+    with open(static_path + "Th_.htm" , "w", encoding="utf-8") as f:
+        f.write(text_body)
     vin_ = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", vin_)
     vin_ = re.sub(r"\r\n", "\n", vin_)#これが大事な一行になる
     vin_ = re.sub(r"(<span class=\"red\">)(.|\s)*?(</span>)", "", vin_)
@@ -531,7 +510,7 @@ def Thera_make(text = "Th"):
     vin_ = re.sub(r"\[page(.|\s)*?\]", "", vin_)
     vin_ = re.sub(r"(<i>(.|\s)*?</i>|<span class=\"(red|blue)\">|</span>|<b>|</b>|&nbsnbsp;|&nbsp;|&#8216;|</body>|</html>)", "", vin_)
     vin_ = re.sub(r"-<BR>\n", "", vin_)
-    vin_ = re.sub(r"uddānaṃ:(.|\s).*?ti\.<BR>", "", vin_)#悪いけどuddAnaをつぶす
+    vin_ = re.sub(r"uddānaṃ:(.|\s).*?ti\.<BR>", "", vin_)
     vin_ = re.sub(r"( {4,})(.*?<BR>\n.*?)( {4,})(.*?\|\| Th_\*\d)", r"\2" + r"\4", vin_)
     vin_ = re.sub(r"-\n", "", vin_)
     vin_ = re.sub(r"\n{2,}", "\n", vin_)
@@ -539,26 +518,26 @@ def Thera_make(text = "Th"):
     vin_ = re.sub(r"(?<=\n)abhāsitthā 'ti.<BR>", "", vin_)
     vin_ = re.sub(r"\n\s{1,}\|\| Th", " || Th", vin_)
     vin_ = re.sub(r"(?<=\n)\s{2,}.*?\n", "", vin_)
-    vin_ = re.sub(r"(<BR>\n){2,}", "<BR>\n", vin_)
-    vin_ = re.sub(r"\|\| 939 \|\|", "|| Th_939 ||", vin_)#電子テキストの致命的ミスを直す
-    vin_ = vin_[:-5] + " || Th_end ||"#最後の韻文も拾えるようにする
+    vin_ = re.sub(r"(<BR>\n){2,}", "<BR>\n", vin_)# This code is needed for the typo of e-text itself
+    vin_ = vin_[:-5] + " || Th_end ||"# To deal with the last verse
     vs = re.finditer(r"(\s|.)*? Th_.*? \|\|", vin_)
     verse_set = []
     for v in vs:
         verse = v.group(0)
-        lines = verse.split("<BR>\n")#韻文のpada区切りに関係ない無意味な改行を削る。文字数が30文字未満だったら無意味な改行と判断
+        lines = verse.split("<BR>\n")#Delete nonsence line-changes; sometimes line-changes don't mean pada(s)-changes.
         changed_verse = ""
         for line in lines[1:]:
             if len(line) >= 30:
                 changed_verse += line + " <BR>"
             else:
                 changed_verse = changed_verse[:-4] + line + " <BR>"
+        changed_verse = changed_verse[:-4]
         verse_set.append(changed_verse)
     with open(static_path + "Thera_.csv", "w", encoding="utf-8", newline="") as g:
         writer = csv.writer(g)
-        writer.writerows(verse_set)
+        writer.writerow(verse_set)
 
-#Cp のテキスト整形のやりかた
+
 @process_print
 def Cp_make(text = "Cp"):
     Cp_number = r"<b>Cp_.*</b>"
@@ -566,6 +545,9 @@ def Cp_make(text = "Cp"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/carpitou.htm")
     response.encoding = "utf-8"
     text = response.text
+    text_body = re.sub(r"(<b>)(Cp_.*?)(\.)(.*?)(</b>)", "<section id ='" + r"\2" + "_" + r"\4" + "'>" + r"\1"+r"\2"+r"\3"+r"\4"+r"\5" + "</section>", copy.deepcopy(text))
+    with open(static_path + "Cp_.htm", "w", encoding="utf-8") as f:
+        f.write(text_body)
     Cp = re.finditer(Cp_number, text)
     Cp_list = [
         (Cp_index.start(), Cp_index.end()) 
@@ -580,7 +562,7 @@ def Cp_make(text = "Cp"):
     final_result = []
     for text in result_list:
         number = re.sub(r"(<b>|</b>)", "", text[0])
-        number = re.sub(r"_", " ", number)
+#        number = re.sub(r"_", " ", number)
         main = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "*"r"\2", text[1])
         main = re.sub(r"(<sup>)(\d*)(</sup>)", "*"r"\2", main)
         main = re.sub(r"(<i>(.|\s)*?</i>|<span class=\"red\">|</span>|<b>|</b>|&nbsp;|&#8216;|<BR>)", "", main)
@@ -591,14 +573,20 @@ def Cp_make(text = "Cp"):
         writer = csv.writer(g)
         writer.writerows(final_result)
 
-#         "Vv.txt": "http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/vimvatou.htm",
-#         "Pv.txt": "http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/petvatou.htm",
-
 @process_print
 def Vm_make(text = "Vv"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/vimvatou.htm")
     response.encoding = "utf-8"
     text = response.text
+    text_body = re.sub(r"(<b>)(Vv_.*?)(\d*?)(\[.*?\])(\.)(\d*?)(</b>)", "<section id='" + r"\2" + r"\3" + r"\4" + "_" + r"\6" + "'>".replace(".", "_") + r"\1"+r"\2"+r"\3"+r"\4"+r"\5"+r"\6"+r"\7" + "</section>" ,copy.deepcopy(text))
+    with open(static_path + "Vm_.htm", "w", encoding = "utf-8") as f:
+        f.write(text_body)
+    text = re.sub(r"\r\n", "\n", text)
+    text = re.sub(r"\[page.*?\].*?<BR>\n", "", text)
+    text = re.sub(r"(?<=\n)\s*?<b>\d.*?<BR>\n", "", text)
+#    text = re.sub(r"<b>.*?</b>", "", text)
+    text = re.sub(r"<i>.*?</i>", "", text)
+    text = re.sub(r"(<span class=\"red\">)(.|\s)*?(</span>)", "", text)
     start_point = re.finditer(r"<b>Vv.*?</b>", text)
     end_point = re.finditer(r"\d \|\|</b><BR>", text)
     start_points = [(n.start(), n.end()) for n in start_point]
@@ -608,14 +596,16 @@ def Vm_make(text = "Vv"):
         number = text[start_points[i][0]: start_points[i][1]]
         main = text[start_points[i][1]+1: end_points[i]]
         number = number.replace("<b>", "").replace("</b>", "")
+        main = re.sub(r"\[page.*?\].*?\n", "", main)
         main = re.sub(r"(<span class=\"red\"><sup>)(\d*)(</sup></span>)", "*"r"\2", main)
         main = re.sub(r"(<b>|</b>)", "", main)
         main = re.sub(r"<b>.*?</b>", "", main)
-        main = re.sub(r"<i>.*?</i>", "", main)
+#        main = re.sub(r"<i>.*?</i>", "", main)
         main = re.sub(r"(<span class=\"red\">)(.|\s)*?(</span>)", "", main)
         main = re.sub(r"(<sup>)(\d*)(</sup>)", "*"r"\2", main)
         main = re.sub(r"(<i>(.|\s)*?</i>|<span class=\"red\">|</span>|<b>|</b>|&nbsp;|&#8216;)", "", main)
         main = re.sub(r"^ ?.*?$", "", main)
+        main = re.sub(r"(<BR>\n){2,}", "<BR>\n", main)
         if main[-4:] == "<BR>":
             main = main[:-4]
         result.append([number + "(Vv)", main.strip()])#(Vv, Vm のテキスト名をここに入力しておく)
@@ -628,8 +618,17 @@ def Pv_make(text = "Pv"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/petvatou.htm")
     response.encoding = "utf-8"
     text = response.text
+    text = re.sub(r"\r\n", "\n", text)
+    text = re.sub(r"(?<=48 Akkharukkhapetavatthu</b><BR>\r\n) ", "<b>Vv_IV,13[=48].1</b>", text)
+    text_body = re.sub(r"(<b>)(Vv_.*?)(\d*?)(\[.*?\])(\.)(\d*?)(</b>)", "<section id='" + r"\2" + r"\3" + r"\4" + "_" + r"\6" + "'>" + r"\1"+r"\2"+r"\3"+r"\4"+r"\5"+r"\6"+r"\7" + "</section>" ,copy.deepcopy(text))
+    with open(static_path + "Pv_.htm", "w", encoding = "utf-8") as f:
+        f.write(text_body)
+    text = re.sub(r"\[page.*?\].*?<BR>\n", "", text)
+    text = re.sub(r"(?<=\n)\s*?<b>\d.*?<BR>\n", "", text)
+#    text = re.sub(r"<b>.*?</b>", "", text)
+    text = re.sub(r"<i>.*?</i>", "", text)
     start_point = re.finditer(r"<b>Vv.*?</b>", text)
-    end_point = re.finditer(r"\d \|\|</b><BR>", text)
+    end_point = re.finditer(r"\d \|\|</b>.?<BR>", text)
     start_points = [(n.start(), n.end()) for n in start_point]
     end_points = [n.end() for n in end_point]
     result = []
@@ -639,12 +638,14 @@ def Pv_make(text = "Pv"):
         number = number.replace("<b>", "").replace("</b>", "")
         main = re.sub(r"(<span class=\"red\"><sup>)(\d*)(</sup></span>)", "*"r"\2", main)
         main = re.sub(r"(<b>|</b>)", "", main)
+        main = re.sub(r"\[page.*?\].*?\n", "", main)
         main = re.sub(r"<b>.*?</b>", "", main)
-        main = re.sub(r"<i>.*?</i>", "", main)
+    #    main = re.sub(r"<i>.*?</i>", "", main)
         main = re.sub(r"(<span class=\"red\">)(.|\s)*?(</span>)", "", main)
         main = re.sub(r"(<sup>)(\d*)(</sup>)", "*"r"\2", main)
         main = re.sub(r"(<i>(.|\s)*?</i>|<span class=\"red\">|</span>|<b>|</b>|&nbsp;|&#8216;)", "", main)
         main = re.sub(r"^ ?.*?$", "", main)
+        main = re.sub(r"(<BR>\n){2,}", "<BR>\n", main)
         if main[-4:] == "<BR>":
             main = main[:-4]
         result.append([number + "(Pv)", main.strip()])#(Vv, Vm のテキスト名をここに入力しておく)
@@ -657,10 +658,13 @@ def Dhp_make(name = "Dhp", targetter = r"\/\/ Dhp_.* \/\/<BR>"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/dhampdou.htm")
     response.encoding = "utf-8"
     text = response.text
+    text_body = re.sub(r"(\/\/ )(Dhp_.*)( \/\/)", "<section id='" + r"\2" + "'>" + r"\1" + r"\2" + r"\3" + "</section>", copy.deepcopy(text))
+    with open(static_path + "Dhp_.htm", "w", encoding = "utf-8") as f:
+        f.write(text_body)
     text = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", text)
     main = re.sub(r"\r\n", "\n", text)
-    vers_number = re.findall(targetter, main)#例えば Dhp は r"\/\/ Dhp_.* \/\/<BR>"
-    vers_number = [num.replace("<BR>", "").replace(" ", "").replace("/", "").replace("<b>", "").replace("_", " ") for num in vers_number]
+    vers_number = re.findall(targetter, main)
+    vers_number = [num.replace("<BR>", "").replace(" ", "").replace("/", "").replace("<b>", "") for num in vers_number]
     main = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "*"r"\2", main)
     main = re.sub(r"<b>.*?</b>", "", main)
     main = re.sub(r"<i>.*?</i>", "", main)
@@ -691,10 +695,13 @@ def Bv_make(name = "Bv", targetter = r"\/\/ Bv_.* \/\/<BR>"):
     response = requests.get("http://gretil.sub.uni-goettingen.de/gretil/2_pali/1_tipit/2_sut/5_khudd/budvmsou.htm")
     response.encoding = "utf-8"
     text = response.text
+    text_body = re.sub(r"(\/\/ )(Bv_)(\d*?)(\.)(\d*?)( \/\/)", "<section id='" + r"\2" + r"\3" + "_" + r"\5" + "'>" + r"\1"+r"\2"+r"\3"+r"\4"+r"\5"+r"\6" + "</section>", copy.deepcopy(text))
+    with open(static_path + "Bv_.htm", "w", encoding = "utf-8") as f:
+        f.write(text_body)
     text = re.sub(r"<!DOCTYPE html>(.|\s)*?(?=\[page)", "", text)
     main = re.sub(r"\r\n", "\n", text)
-    vers_number = re.findall(targetter, main)#例えば Dhp は r"\/\/ Dhp_.* \/\/<BR>"
-    vers_number = [num.replace("<BR>", "").replace(" ", "").replace("/", "").replace("<b>", "").replace("_", " ") for num in vers_number]
+    vers_number = re.findall(targetter, main)
+    vers_number = [num.replace("<BR>", "").replace(" ", "").replace("/", "").replace("<b>", "") for num in vers_number]
     main = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "*"r"\2", main)
     main = re.sub(r"<b>.*?</b>", "", main)
     main = re.sub(r"<i>.*?</i>", "", main)
@@ -757,46 +764,8 @@ def text_create(text):
         f.write(text_for_search)
 
 if __name__ == "__main__":
-#    Sp_flag = 0
-#    def text_requests(text_dict_item):
-#        global Sp_flag
-#        name, _ = text_dict_item
-#        if name == "Th.txt":
-#            Thera_make()
-#        elif name == "Thi.txt":
-#            Theri_make()
-#        elif name == "Ap.txt":
-#            Ap_create()
-#        elif name == "Sn.txt":
-#            Sn_create()
-#        elif name in {"Cp.txt", "Vm.txt", "Pv.txt", "Dhp.txt", "Bv.txt"}:
-#            text_name, extention = name.split(".")
-#            exec("{}_make()".format(text_name))
-#        elif name in ["Ja_{}.txt".format(i) for i in range(1, 7)]:
-#            text_name, extention = name.split(".")
-#            J_create(name, text_name[-1], text_name)
-#        elif name in ["Sp_{}".format(i) for i in range(1,8)]:
-#            if Sp_flag == 1:
-#                pass
-#            else:
-#                Sp_flag = 1
-#                Sp_create()
-#        else:
-#            text_create(name)
+
     mainpart()
-    
-#    with futures.ThreadPoolExecutor() as executor:
-#        res = executor.map(text_requests, text_dict.items())
-#        list(res)
-#    Theri_make()
-#    Thera_make()
-#    Cp_make()
-#    Vm_make()
-#    Pv_make()
-#    Dhp_make()
-#    Bv_make()
-#    Sn_create()
-#    Ap_create()
 
 
 

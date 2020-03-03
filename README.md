@@ -8,7 +8,9 @@
 
 # How to install and launch
 
-- First, please download the system from the following address and unzip the file
+- First, please download the system from the following address and unzip the file.
+  - Windows: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip
+  - Mac: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(mac).zip
 
 - Second, please click “Pali_searcher(.exe)” in the unzipped folder. Please make sure you have an internet connection when installing, because the installation requires the system to download texts from GRETIL and create data to search the texts. This process will take few minutes. **Please do not interrupt the system while downloading texts**. When you get the message reading, “All texts have been installed”, please hit the Enter key on the black console and close the application.
 
@@ -29,6 +31,8 @@
 - However, when you use regular expressions (in Pali_searcher, you can use Python’s regex) with the KH-transcription system at the same time, **Pali_searcher gives priority to the KH-transcription**. For instance, if you input ¥S (meaning “any characters but space characters”) and check “Use KH-transcription”, it converts ¥S into ¥ṣ. If you would like to avoid this, you need to input Unicode characters like ā by yourself and check “Input Unicode characters by yourself” or just surround the parts you do not need to change with { }. Ex. {¥S}gacchatIti is converted into ¥Sgacchatīti when you check “Use KH-transcription”. The first ¥S remains unchanged, because it is surrounded by {}; on the other hand, the final “I” will be converted into “ī”.
 
 
+　
+ 
 
 
 (Watanabe Yoichiro)

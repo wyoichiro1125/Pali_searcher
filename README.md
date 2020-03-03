@@ -17,9 +17,8 @@ VRI版だと頁数・行数を数えるのにひと手間かかりますが、�
 # ダウンロードの方法
 
 - データを下記アドレスからダウンロードして解凍して下さい。
-
-Windows: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip
-Mac: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(mac).zip
+  - Windows: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip
+  - Mac: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(mac).zip
 
 - 解凍されたフォルダの内部にある Pali_searcher (.exe) をクリックして下さい。
 
@@ -45,6 +44,6 @@ Mac: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(mac
 
 # エラー時の対応について
 
-エラーが出た場合、検索用テキストが完全にインストールされていない可能性が最も高いものと思われます。static フォルダ内のデータを一度全て削除してからもう一度アプリケーションを実行してください。
+検索中にエラーが出た場合、検索用テキストが完全にインストールされていない可能性が最も高いものと思われます。.css ならびに .js の拡張子を持ったファイルをのぞいた static フォルダ内のデータを一度全て削除してからもう一度アプリケーションを実行してください。
 
 

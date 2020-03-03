@@ -192,7 +192,7 @@ def text_make(text):
         vin_ = re.sub(r"(?<=page 001\])(.|\s)*?(?=\n     \S)", "", vin_)
     vin_ = re.sub(r"\[page(.|\s)*?\]", "%", vin_)
     vin_ = re.sub(r"(?<=page 001])(.|\s)*?(?=\n\     \S)", "", vin_)
-    vin_ = re.sub(r"(<span class=\"red\">)(\d*)(</span>)", "", vin_)
+    vin_ = re.sub(r"<span class=\"red\">\d*?</span>", "", vin_)
     vin_ = re.sub(r"\((.|\s).*?\d\)", "", vin_)
     vin_ = re.sub(r"\[\d.*?\]", "", vin_)#カッコで括られたセクションの名前のようなところを削除したい
     vin_ = re.sub(r"\s+\d{1,3}\. .*?VAGGA\.", "", vin_)#Jataka の ~ vagga っていうのを消したい

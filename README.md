@@ -35,7 +35,7 @@
  
 
 
-(Watanabe Yoichiro)
+(Watanabe Yoichiro: tt648h★gmail.com (change ★ to @))
 
 I am greatful to Mr. Max Brandstadt, who kindly checked my English.
 
@@ -81,4 +81,4 @@ VRI版だと頁数・行数を数えるのにひと手間かかりますが、�
 
 
 
-（制作：渡邉要一郎）
+（制作：渡邉要一郎: tt648h★gmail.com (★ を @ に)）

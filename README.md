@@ -14,12 +14,11 @@ VRI版だと頁数・行数を数えるのにひと手間かかりますが、�
 
 ---
 
-#ダウンロードの方法
+# ダウンロードの方法
 
 - データを下記アドレスからダウンロードして解凍して下さい。
 
 Windows: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip
-
 Mac: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(mac).zip
 
 - 解凍されたフォルダの内部にある Pali_searcher (.exe) をクリックして下さい。
@@ -33,13 +32,13 @@ Mac: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(mac
 
 ---
 
-#検索方法
+# 検索方法
 
 - 「Show line-changes」 を押すと元の電子テキストの改行を反映させた検索結果を出すことができます。
 
 - KH転写方式で検索したい場合、「Use KH-transcription system」をチェックしてください。
 
-- Pythonの正規表現に対応しています。しかし、**KH転写方式と重なった場合KH転写の方が優先されてしまうので注意して下さい**。例えば、\S は「空白文字以外」ではなく、\ṣ と変換されてしまいます。もしも正規表現を使用したい場合は、「Input Unicode characters by yourself」をチェックしてください
+- Pythonの正規表現に対応しています。しかし、**KH転写方式と重なった場合KH転写の方が優先されてしまうので注意して下さい**。例えば、\S は「空白文字以外」ではなく、\ṣ と変換されてしまいます。もしも正規表現を使用したい場合は、「Input Unicode characters by yourself」をチェックし、ṣ等を自分で入力していただくか、あるいはKH転写を適応しない部分を {} で囲んでください。例えば、{¥S}gacchati は、空白文字以外をその直前に有する gacchati を意味することになります（具体的には upasarga を伴う gacchati）。
 
 
 ---

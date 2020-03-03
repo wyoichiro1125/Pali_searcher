@@ -1,19 +1,48 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="Content-Style-Type" content="text/css">
+  <meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Expires" content="0">
   <title></title>
   <meta name="Generator" content="Cocoa HTML Writer">
   <meta name="CocoaVersion" content="1504.83">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 16.0px; font: 16.0px Times; color: #000000; -webkit-text-stroke: #000000}
-    span.s1 {font-kerning: none}
+  <script src="{{ url_for('static', filename = 'jquery-3.2.1.min.js') }}"></script>
+  <script type="text/javascript" src= "{{ url_for('static', filename = 'jquery.simplePagination.js') }}"></script>
+  <link rel= "stylesheet" href="{{ url_for('static', filename = 'simplePagination.css') }}">
   </style>
 </head>
 <body>
+
+</div>
 <p class="p1"; font: 16.0px Times><span class="s1">
   {{ result | safe }}
-  <span class="Apple-converted-space"> </span></span></p>
+<br>
+  <div class="pagination-holder clearfix">
+    <div id="light-pagination" class="pagination"></div>
+</span></p>
+  <script type="text/javascript">
+    $(function () {
+        $(".pagination").pagination({
+            items: {{ page_counter | safe}},
+            displayedPages: 4,
+            prevText:"Before",
+            nextText:"Next",
+            cssStyle: 'light-theme',
+            onPageClick: function (currentPageNumber) {
+                showPage(currentPageNumber);
+            }
+        })
+    });
+    function showPage(currentPageNumber) {
+        var page = "#page-" + currentPageNumber;
+        $('.selection').hide();
+        $(page).show();
+    }
+</script>
+
+
 </body>
 </html>

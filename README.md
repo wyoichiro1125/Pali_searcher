@@ -29,10 +29,10 @@
 - However, when you use regular expressions (in Pali_searcher, you can use Python’s regex) with the KH-transcription system at the same time, **Pali_searcher gives priority to the KH-transcription**. For instance, if you input ¥S (meaning “any characters but space characters”) and check “Use KH-transcription”, it converts ¥S into ¥ṣ. If you would like to avoid this, you need to input Unicode characters like ā by yourself and check “Input Unicode characters by yourself” or just surround the parts you do not need to change with { }. Ex. {¥S}gacchatIti is converted into ¥Sgacchatīti when you check “Use KH-transcription”. The first ¥S remains unchanged, because it is surrounded by {}; on the other hand, the final “I” will be converted into “ī”.
 
 
+
+
 (Watanabe Yoichiro)
-
-* I am greatful to Dr. Max Brandstadt, who kindly checked my English.
-
+I am greatful to Mr. Max Brandstadt, who kindly checked my English.
 
 ---
 

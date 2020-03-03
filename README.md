@@ -1,6 +1,6 @@
 # Pali_searcher
 
-- This system is for searching e-texts based on the PTS version.If you use the Chaṭṭha Saṅgāyana CD version, you may have trouble finding corresponding passages in the PTS texts. However, this system can (hopefully) save you some time, allowing you to search for the corresponding strings in the PTS versions.
+- This system is for searching e-texts based on the PTS version. If you use the Chaṭṭha Saṅgāyana CD version, you may have trouble finding corresponding passages in the PTS texts. However, this system can (hopefully) save you some time, allowing you to search for the corresponding strings in the PTS versions.
 
 - Please keep in mind that this system only uses e-texts inputted by the Dhammakaya Foundation and uploaded on GRETIL, which are the original format PTS texts. Consequently, this system has only a limited numbers of texts in comparison with the Chaṭṭha Saṅgāyana CD version. In addition, I cannot correct all the typos in the e-texts in themselves. Please take these factors into consideration when using this system.
 

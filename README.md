@@ -52,7 +52,7 @@ VRI版だと頁数・行数を数えるのにひと手間かかりますが、�
 
 ---
 
-# ダウンロードの方法
+# ダウンロードと起動の方法
 
 - データを下記アドレスからダウンロードして解凍して下さい。
   - Windows: https://github.com/wyoichiro1125/Pali_searcher/raw/master/Pali_searcher(Windows).zip

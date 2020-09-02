@@ -103,7 +103,7 @@ class Pali_verse:
             self.text_id = self.text_number[:-4]
         if self.text_id == "":
             self.text_id = self.text_number
-            href = url +  "static/" + self.text_name + "_.htm#" + self.text_id.replace(".", "_")
+            href = "static/" + self.text_name + "_.htm#" + self.text_id.replace(".", "_")
         return """<a href = {} target="_blank">""".format(href) + "{}</a>: {}".format(self.text_number, self.text)
 
 def KH_changer(word):

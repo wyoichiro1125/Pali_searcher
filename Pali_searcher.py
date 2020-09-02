@@ -48,8 +48,8 @@ class Pali_text:
         if self.name[:2] == "J_":
             pre = self.name[:2] 
             aft = self.name[2:]
-	    roman = ["null", "I", "II", "III", "IV", "V", "VI"]
-            vol = roman.index(aft)
+            roman = ["I", "II", "III", "IV", "V", "VI"]
+            vol = roman.index(aft) + 1
             href_name = "Ja_" + str(vol)
 
         elif self.name == "Sp":
